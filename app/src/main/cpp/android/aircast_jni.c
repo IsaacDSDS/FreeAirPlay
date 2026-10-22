@@ -861,6 +861,17 @@ Java_com_isaacbenavides_aircast_features_receiver_data_nativebridge_AirPlayNativ
     release_native(env);
 }
 
+JNIEXPORT void JNICALL
+Java_com_isaacbenavides_aircast_features_receiver_data_nativebridge_AirPlayNative_nativeEndAirPlayVideo(
+        JNIEnv *env, jobject thiz) {
+    (void) env;
+    (void) thiz;
+    /* Only flags the connections; the httpd thread closes them, as when a video ends. */
+    if (raop && hls_support) {
+        raop_remove_hls_connections(raop);
+    }
+}
+
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     (void) reserved;
     g_vm = vm;

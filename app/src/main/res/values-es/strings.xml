@@ -26,6 +26,9 @@
     <string name="audio_source">AirPlay · %1$s</string>
     <string name="track_unknown">Sin título</string>
 
+    <string name="playback_loading">Cargando…</string>
+    <string name="playback_hint">OK pausa  ·  ← → 10 s  ·  Atrás detener</string>
+
     <string name="notification_channel">Receptor AirPlay</string>
     <string name="notification_text">Esperando dispositivos AirPlay</string>
 </resources>

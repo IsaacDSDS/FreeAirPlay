@@ -68,6 +68,15 @@
         <item name="android:progressBackgroundTint">@color/surface_elevated</item>
     </style>
 
+    <style name="Widget.AirCast.PlaybackBar" parent="">
+        <item name="android:background">@drawable/bg_banner</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:paddingStart">@dimen/space_l</item>
+        <item name="android:paddingEnd">@dimen/space_l</item>
+        <item name="android:paddingTop">@dimen/space_m</item>
+        <item name="android:paddingBottom">@dimen/space_m</item>
+    </style>
+
     <style name="Widget.AirCast.Banner" parent="">
         <item name="android:background">@drawable/bg_banner</item>
         <item name="android:textAppearance">@style/TextAppearance.AirCast.Label</item>

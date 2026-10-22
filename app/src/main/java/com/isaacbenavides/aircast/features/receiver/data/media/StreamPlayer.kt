@@ -29,12 +29,16 @@ import java.util.concurrent.TimeUnit
  *
  * ExoPlayer lives on its own thread; the client's frequent /playback-info polls are answered from
  * [status], a snapshot refreshed on that thread, so HTTP threads never wait for the player.
+ * The TV remote can also pause and seek: the client sees it on its next poll.
  */
 @OptIn(UnstableApi::class)
 internal class StreamPlayer(private val context: Context, private val listener: Listener) {
 
     interface Listener {
         fun onVideoSizeChanged(width: Int, height: Int)
+
+        /** Pause, seek or buffering changed (not called for normal progress). */
+        fun onPlaybackChanged(positionMs: Long, durationMs: Long, paused: Boolean, buffering: Boolean)
     }
 
     /** What the AirPlay client sees when it polls. Times in seconds, as in the protocol. */
@@ -74,9 +78,18 @@ internal class StreamPlayer(private val context: Context, private val listener: 
             if (playbackState == Player.STATE_READY) prepared = true
             if (playbackState == Player.STATE_ENDED) finished = true
             publishStatus()
+            reportPlayback()
         }
 
         override fun onIsPlayingChanged(isPlaying: Boolean) = publishStatus()
+
+        override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) = reportPlayback()
+
+        override fun onPositionDiscontinuity(
+            oldPosition: Player.PositionInfo,
+            newPosition: Player.PositionInfo,
+            reason: Int,
+        ) = reportPlayback()
 
         override fun onRenderedFirstFrame() = reportVideoSize()
 
@@ -142,12 +155,28 @@ internal class StreamPlayer(private val context: Context, private val listener: 
     }
 
     /** AirPlay rate: 0 pauses, anything else plays. */
-    fun setRate(rate: Float) {
+    fun setRate(rate: Float) = setPaused(rate <= 0f)
+
+    fun setPaused(paused: Boolean) {
         handler.post {
-            player?.playWhenReady = rate > 0f
+            player?.playWhenReady = !paused
             publishStatus()
         }
     }
+
+    /** Relative seek from the TV remote; stops short of the end so a seek never ends the video. */
+    fun seekBy(deltaMs: Long) {
+        handler.post {
+            val exo = player ?: return@post
+            val target = (exo.currentPosition + deltaMs).coerceAtLeast(0L)
+            val durationMs = exo.duration
+            exo.seekTo(
+                if (durationMs == C.TIME_UNSET) target
+                else target.coerceAtMost((durationMs - END_MARGIN_MS).coerceAtLeast(0L)),
+            )
+        }
+    }
+
 
     /** Pauses now and returns the position the client should resume from. */
     fun pauseAndGetPosition(): Float {
@@ -169,13 +198,18 @@ internal class StreamPlayer(private val context: Context, private val listener: 
         player?.setVideoSurface(surface)
     }
 
-    /** Blocking: releases the player and with it the surface and audio output. */
-    fun stop() {
+    /**
+     * Blocking: releases the player and with it the surface and audio output. With [reportFinished]
+     * (closed on the TV) the client's next poll learns the video is over and ends its session.
+     */
+    fun stop(reportFinished: Boolean = false) {
         status = null
         runOnPlayerThread {
             releasePlayer()
             url = null
         }
+        // After the release, so the status ticker can't overwrite it.
+        if (reportFinished) status = FINISHED
     }
 
     fun status(): Status? = status
@@ -242,6 +276,16 @@ internal class StreamPlayer(private val context: Context, private val listener: 
         }
     }
 
+    private fun reportPlayback() {
+        val exo = player ?: return
+        listener.onPlaybackChanged(
+            positionMs = exo.currentPosition,
+            durationMs = exo.duration.takeIf { it != C.TIME_UNSET } ?: 0L,
+            paused = !exo.playWhenReady,
+            buffering = exo.playbackState == Player.STATE_BUFFERING,
+        )
+    }
+
     private fun reportVideoSize() {
         val size = player?.videoSize ?: return
         if (size.width <= 0 || size.height <= 0) return
@@ -272,6 +316,7 @@ internal class StreamPlayer(private val context: Context, private val listener: 
         const val HTTP_TIMEOUT_MS = 15_000
         const val STATUS_INTERVAL_MS = 250L
         const val BLOCKING_TIMEOUT_MS = 2_000L
+        const val END_MARGIN_MS = 1_000L
         val FINISHED = Status(
             durationSec = -1.0,
             positionSec = -1.0,

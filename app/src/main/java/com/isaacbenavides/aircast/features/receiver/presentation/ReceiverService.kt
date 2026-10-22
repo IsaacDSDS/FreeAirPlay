@@ -70,7 +70,8 @@ class ReceiverService : LifecycleService() {
         // third-party apps go foreground while one of their activities is on screen, so every
         // start request coming from a visible activity retries the promotion.
         promoteToForeground()
-        return START_STICKY
+        // Only runs once the user opens the app: not brought back by the system if it is killed.
+        return START_NOT_STICKY
     }
 
     private fun promoteToForeground() {

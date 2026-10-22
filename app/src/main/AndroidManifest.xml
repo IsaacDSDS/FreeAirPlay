@@ -7,7 +7,6 @@
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Lets the service bring the mirroring screen to the front from the background. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
@@ -44,26 +43,9 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".features.receiver.presentation.BootActivity"
-            android:excludeFromRecents="true"
-            android:exported="false"
-            android:noHistory="true"
-            android:taskAffinity=".boot"
-            android:theme="@style/Theme.AirCast.Invisible" />
-
         <service
             android:name=".features.receiver.presentation.ReceiverService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
-
-        <receiver
-            android:name=".features.receiver.presentation.BootReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-            </intent-filter>
-        </receiver>
     </application>
 </manifest>

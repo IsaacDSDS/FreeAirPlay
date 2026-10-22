@@ -5,10 +5,12 @@ import android.content.res.ColorStateList
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.os.SystemClock
+import android.view.KeyEvent
 import android.view.SurfaceHolder
 import android.view.View
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.annotation.ColorRes
 import androidx.core.content.ContextCompat
@@ -22,6 +24,7 @@ import com.isaacbenavides.aircast.features.receiver.domain.model.NowPlaying
 import com.isaacbenavides.aircast.features.receiver.domain.model.ReceiverError
 import com.isaacbenavides.aircast.features.receiver.domain.model.ReceiverPhase
 import com.isaacbenavides.aircast.features.receiver.domain.model.ReceiverState
+import com.isaacbenavides.aircast.features.receiver.domain.model.StreamPlayback
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -39,12 +42,20 @@ class ReceiverActivity : ComponentActivity() {
     private var shownArtwork: ByteArray? = null
     private var bannerJob: Job? = null
     private var progressJob: Job? = null
+    private var playbackBarJob: Job? = null
+    private var shownPlayback: StreamPlayback? = null
+
+    /** Back closes an AirPlay video, like Menu on an Apple TV; otherwise the default applies. */
+    private val stopStreamOnBack = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() = viewModel.stopStream()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityReceiverBinding.inflate(layoutInflater)
         setContentView(binding.root)
         autoLaunched = intent.getBooleanExtra(EXTRA_AUTO_LAUNCHED, false)
+        onBackPressedDispatcher.addCallback(this, stopStreamOnBack)
 
         binding.videoSurface.holder.addCallback(object : SurfaceHolder.Callback {
             override fun surfaceCreated(holder: SurfaceHolder) = viewModel.onSurfaceAvailable(holder.surface)
@@ -73,18 +84,46 @@ class ReceiverActivity : ComponentActivity() {
         if (intent.getBooleanExtra(EXTRA_AUTO_LAUNCHED, false) && wasInBackground) autoLaunched = true
     }
 
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (viewModel.state.value.phase != ReceiverPhase.STREAMING) return super.onKeyDown(keyCode, event)
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER,
+            KeyEvent.KEYCODE_SPACE, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+            -> if (event.repeatCount == 0) viewModel.togglePause()
+            KeyEvent.KEYCODE_MEDIA_PLAY -> viewModel.setPaused(false)
+            KeyEvent.KEYCODE_MEDIA_PAUSE -> viewModel.setPaused(true)
+            KeyEvent.KEYCODE_DPAD_LEFT -> viewModel.seekBy(-SEEK_STEP_MS)
+            KeyEvent.KEYCODE_DPAD_RIGHT -> viewModel.seekBy(SEEK_STEP_MS)
+            KeyEvent.KEYCODE_MEDIA_REWIND -> viewModel.seekBy(-SEEK_LONG_STEP_MS)
+            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> viewModel.seekBy(SEEK_LONG_STEP_MS)
+            KeyEvent.KEYCODE_MEDIA_STOP -> {
+                viewModel.stopStream()
+                return true
+            }
+            // Only bring up the controls.
+            KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_INFO -> Unit
+            else -> return super.onKeyDown(keyCode, event)
+        }
+        showPlaybackBar()
+        return true
+    }
+
     private fun render(state: ReceiverState) {
         val videoPhase = state.phase.showsVideo()
         val showingVideo = videoPhase && state.videoSize != null
         val playingAudio = state.phase == ReceiverPhase.PLAYING_AUDIO
+        val streaming = state.phase == ReceiverPhase.STREAMING
 
         binding.videoContainer.aspectRatio = state.videoSize?.aspectRatio ?: 0f
         binding.idlePanel.isVisible = !showingVideo && !playingAudio
         binding.audioPanel.isVisible = playingAudio && !showingVideo
 
         renderIdle(state)
-        if (playingAudio) renderNowPlaying(state) else stopProgressTicker()
+        if (playingAudio) renderNowPlaying(state)
+        renderPlayback(state)
+        if (playingAudio || streaming) startProgressTicker() else stopProgressTicker()
         renderBanner(state)
+        stopStreamOnBack.isEnabled = streaming
 
         val keepAwake = videoPhase || playingAudio
         if (keepAwake) {
@@ -142,14 +181,49 @@ class ReceiverActivity : ComponentActivity() {
             }
             binding.artwork.clipToOutline = true
         }
-        startProgressTicker()
+    }
+
+    private fun renderPlayback(state: ReceiverState) {
+        val playback = state.playback.takeIf { state.phase == ReceiverPhase.STREAMING }
+        if (playback == null) {
+            playbackBarJob?.cancel()
+            binding.playbackBar.isVisible = false
+            shownPlayback = null
+            return
+        }
+        binding.playbackIcon.setImageResource(if (playback.paused) R.drawable.ic_play else R.drawable.ic_pause)
+        binding.playbackTitle.text = if (playback.buffering) {
+            getString(R.string.playback_loading)
+        } else {
+            getString(R.string.status_streaming, state.client?.name ?: getString(R.string.client_unknown))
+        }
+        // Every report is a start, pause, seek or buffering change: worth showing the controls.
+        if (playback != shownPlayback) {
+            shownPlayback = playback
+            showPlaybackBar()
+        }
+        updatePlaybackProgress(playback)
+    }
+
+    /** Shows the controls; they hide on their own only while the video is actually playing. */
+    private fun showPlaybackBar() {
+        binding.playbackBar.isVisible = true
+        playbackBarJob?.cancel()
+        val playback = viewModel.state.value.playback
+        if (playback == null || playback.paused || playback.buffering) return
+        playbackBarJob = lifecycleScope.launch {
+            delay(PLAYBACK_BAR_TIMEOUT_MS)
+            binding.playbackBar.isVisible = false
+        }
     }
 
     private fun startProgressTicker() {
         if (progressJob?.isActive == true) return
         progressJob = lifecycleScope.launch {
             while (isActive) {
-                updateProgress(viewModel.state.value.nowPlaying)
+                val state = viewModel.state.value
+                updateProgress(state.nowPlaying)
+                state.playback?.let(::updatePlaybackProgress)
                 delay(PROGRESS_TICK_MS)
             }
         }
@@ -171,6 +245,19 @@ class ReceiverActivity : ComponentActivity() {
         binding.trackProgress.progress = (elapsed * 1000 / duration).toInt()
         binding.trackElapsed.text = formatTime(elapsed)
         binding.trackDuration.text = formatTime(duration)
+    }
+
+    private fun updatePlaybackProgress(playback: StreamPlayback) {
+        val duration = playback.durationMs.takeIf { it > 0 }
+        val running = !playback.paused && !playback.buffering
+        val advanced = if (running) SystemClock.elapsedRealtime() - playback.positionCapturedAtMs else 0
+        val elapsed = (playback.positionMs + advanced).let { if (duration != null) it.coerceIn(0, duration) else it }
+        binding.playbackProgress.isVisible = duration != null
+        binding.playbackDuration.isVisible = duration != null
+        binding.playbackElapsed.text = formatTime(elapsed)
+        if (duration == null) return
+        binding.playbackProgress.progress = (elapsed * 1000 / duration).toInt()
+        binding.playbackDuration.text = formatTime(duration)
     }
 
     private fun renderBanner(state: ReceiverState) {
@@ -201,12 +288,18 @@ class ReceiverActivity : ComponentActivity() {
 
     private fun formatTime(ms: Long): String {
         val totalSeconds = ms / 1000
-        return "%d:%02d".format(totalSeconds / 60, totalSeconds % 60)
+        val hours = totalSeconds / 3600
+        val minutes = totalSeconds / 60 % 60
+        val seconds = totalSeconds % 60
+        return if (hours > 0) "%d:%02d:%02d".format(hours, minutes, seconds) else "%d:%02d".format(minutes, seconds)
     }
 
     companion object {
         const val EXTRA_AUTO_LAUNCHED = "auto_launched"
         private const val BANNER_DURATION_MS = 3_000L
         private const val PROGRESS_TICK_MS = 500L
+        private const val PLAYBACK_BAR_TIMEOUT_MS = 4_000L
+        private const val SEEK_STEP_MS = 10_000L
+        private const val SEEK_LONG_STEP_MS = 30_000L
     }
 }

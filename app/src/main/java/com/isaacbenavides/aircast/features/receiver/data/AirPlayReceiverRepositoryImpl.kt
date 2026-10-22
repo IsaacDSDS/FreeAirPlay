@@ -19,6 +19,7 @@ import com.isaacbenavides.aircast.features.receiver.domain.model.NowPlaying
 import com.isaacbenavides.aircast.features.receiver.domain.model.ReceiverError
 import com.isaacbenavides.aircast.features.receiver.domain.model.ReceiverPhase
 import com.isaacbenavides.aircast.features.receiver.domain.model.ReceiverState
+import com.isaacbenavides.aircast.features.receiver.domain.model.StreamPlayback
 import com.isaacbenavides.aircast.features.receiver.domain.model.VideoSize
 import com.isaacbenavides.aircast.features.receiver.domain.repository.AirPlayReceiverRepository
 import com.isaacbenavides.aircast.features.receiver.domain.repository.RenderSurface
@@ -65,6 +66,19 @@ class AirPlayReceiverRepositoryImpl(
     private val stream = StreamPlayer(appContext, object : StreamPlayer.Listener {
         override fun onVideoSizeChanged(width: Int, height: Int) =
             updateState { it.copy(videoSize = VideoSize(width, height)) }
+
+        override fun onPlaybackChanged(positionMs: Long, durationMs: Long, paused: Boolean, buffering: Boolean) =
+            updateState {
+                it.copy(
+                    playback = StreamPlayback(
+                        positionMs = positionMs,
+                        durationMs = durationMs,
+                        paused = paused,
+                        buffering = buffering,
+                        positionCapturedAtMs = SystemClock.elapsedRealtime(),
+                    ),
+                )
+            }
     })
 
     override fun start(): Unit = synchronized(lifecycleLock) {
@@ -124,6 +138,7 @@ class AirPlayReceiverRepositoryImpl(
                 client = null,
                 videoSize = null,
                 nowPlaying = null,
+                playback = null,
             )
         }
     }
@@ -139,6 +154,24 @@ class AirPlayReceiverRepositoryImpl(
         video.setSurface(androidSurface)
         stream.setSurface(androidSurface)
         if (surface == null) updateState { it.copy(videoSize = null) }
+    }
+
+    override fun setStreamPaused(paused: Boolean) = stream.setPaused(paused)
+
+    override fun seekStreamBy(deltaMs: Long) = stream.seekBy(deltaMs)
+
+    override fun stopStream() {
+        synchronized(streamLock) {
+            if (!streamActive) return
+            stream.stop(reportFinished = true)
+            streamActive = false
+            if (running) video.start()
+        }
+        updateSession { it.copy(streaming = false) }
+        // Close the client's AirPlay video connections, as when a video ends, so it stops waiting.
+        synchronized(lifecycleLock) {
+            if (running) AirPlayNative.nativeEndAirPlayVideo()
+        }
     }
 
     // ---------------------------------------------------------------- NativeCallbacks
@@ -221,6 +254,14 @@ class AirPlayReceiverRepositoryImpl(
             stream.play(location, startPositionSec)
         }
         updateSession { it.copy(streaming = true, mirroring = false, audioOnly = false) }
+        updateState {
+            it.copy(
+                playback = StreamPlayback(
+                    positionMs = (startPositionSec * 1000).toLong(),
+                    positionCapturedAtMs = SystemClock.elapsedRealtime(),
+                ),
+            )
+        }
     }
 
     override fun onStreamSeek(positionSec: Float) = stream.seekTo(positionSec)
@@ -283,6 +324,7 @@ class AirPlayReceiverRepositoryImpl(
             client = if (s.connections > 0) state.client else null,
             videoSize = if (s.mirroring || s.streaming) state.videoSize else null,
             nowPlaying = if (s.audioOnly) state.nowPlaying else null,
+            playback = if (s.streaming) state.playback else null,
         )
     }
 

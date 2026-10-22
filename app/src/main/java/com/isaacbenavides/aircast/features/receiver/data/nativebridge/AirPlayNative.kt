@@ -34,4 +34,7 @@ internal object AirPlayNative {
     ): Int
 
     external fun nativeStop()
+
+    /** Closes the client's AirPlay video connections (the client then ends its video session). */
+    external fun nativeEndAirPlayVideo()
 }

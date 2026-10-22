@@ -35,7 +35,7 @@ Kotlin code follows feature-first Clean Architecture:
 core/                       DI (ServiceLocator), network address, Surface adapter
 features/receiver/domain/   ReceiverState, NowPlaying, AirPlayReceiverRepository (pure Kotlin)
 features/receiver/data/     JNI bridge, VideoDecoder, AudioPlayer, StreamPlayer, DMAP parser, identity store
-features/receiver/presentation/  ReceiverActivity, ReceiverService, BootReceiver/BootActivity
+features/receiver/presentation/  ReceiverActivity, ReceiverService
 shared/ui/                  AspectRatioFrameLayout
 ```
 
@@ -65,6 +65,18 @@ The client keeps control: pause/play (`/rate`), seek (`/scrub`) and its progress
 video ends or fails, the receiver reports it as finished and the session closes. Mirroring and
 AirPlay video share the screen surface but never at the same time.
 
+The TV remote controls the video too, and the phone follows on its next `/playback-info` poll:
+
+| Key | Action |
+|---|---|
+| OK / Play-Pause | pause or resume |
+| ← / → | back / forward 10 s |
+| Rewind / Fast-forward | back / forward 30 s |
+| ↑ / ↓ / Info | show the controls |
+| Back / Stop | close the player at once and drop the client's AirPlay video connections, so the phone ends its session too (like Menu on an Apple TV) |
+
+Mirroring can't be controlled from the TV: the picture is the phone's screen.
+
 ## Build
 
 Requirements: Android SDK (platform 35, NDK 27.1.12297006, CMake 3.22.1), JDK 17+.
@@ -85,13 +97,12 @@ adb connect <tv-ip>:5555
 adb install -r app/build/outputs/apk/release/app-release.apk
 # let the receiver bring the mirroring screen to the front from the background
 adb shell appops set com.isaacbenavides.aircast SYSTEM_ALERT_WINDOW allow
-# TCL: allow auto start (boot broadcast)
-adb shell appops set com.isaacbenavides.aircast APP_AUTO_START allow
 ```
 
-Open **AirCast TV** once from the launcher. From then on it stays discoverable in the
-background and after reboots, and opens by itself (waking the screensaver) when a device starts
-mirroring.
+The receiver starts when **AirCast TV** is opened from the launcher; nothing starts it on boot or
+after an update. Once opened it stays discoverable in the background (until the TV restarts or
+the system stops the app) and comes to the front by itself (waking the screensaver) when a
+device starts mirroring or sends a video.
 
 ## TCL firmware notes
 
@@ -99,9 +110,8 @@ TCL's `tcl-service.jar` (`TclAppBootManagerImpl.canStartForegroundGo`) blocks fo
 services of third-party apps unless the app has a visible activity, is a TCL/system app, or is on a
 cloud-delivered whitelist. The app therefore:
 
-- promotes its service to foreground every time `ReceiverActivity` resumes;
-- at boot / after an update opens a transparent `BootActivity` for ~1.5 s so the promotion is
-  allowed, then closes it.
+- starts its service from `ReceiverActivity` and promotes it to foreground every time the
+  activity resumes.
 
 Check with `adb shell dumpsys activity services com.isaacbenavides.aircast | grep isForeground`.
 

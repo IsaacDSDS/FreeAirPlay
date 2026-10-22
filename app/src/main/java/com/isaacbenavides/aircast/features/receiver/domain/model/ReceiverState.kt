@@ -36,5 +36,7 @@ data class ReceiverState(
     /** Size of the mirrored or streamed picture; non-null once the first frame is on screen. */
     val videoSize: VideoSize? = null,
     val nowPlaying: NowPlaying? = null,
+    /** Non-null while [ReceiverPhase.STREAMING]. */
+    val playback: StreamPlayback? = null,
     val error: ReceiverError? = null,
 )

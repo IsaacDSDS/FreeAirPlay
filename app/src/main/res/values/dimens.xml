@@ -15,6 +15,7 @@
     <dimen name="radius_pill">24dp</dimen>
 
     <dimen name="icon_hero">96dp</dimen>
+    <dimen name="icon_control">32dp</dimen>
     <dimen name="artwork_size">280dp</dimen>
     <dimen name="step_badge">32dp</dimen>
     <dimen name="status_dot">10dp</dimen>

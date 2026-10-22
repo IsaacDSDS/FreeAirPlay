@@ -41,7 +41,7 @@ System Roboto via font families; sizes are tuned for viewing from a couch.
 - 4 dp grid: `space_xs` 4, `space_s` 8, `space_m` 16, `space_l` 24, `space_xl` 32, `space_xxl` 48.
 - TV overscan safe area: `safe_horizontal` 48 dp, `safe_vertical` 27 dp — apply to every full-screen layout root.
 - Radii: `radius_card` 20 dp, `radius_artwork` 16 dp, `radius_pill` 24 dp.
-- Brand icon: `icon_hero` 96 dp; artwork: `artwork_size` 280 dp.
+- Brand icon: `icon_hero` 96 dp; artwork: `artwork_size` 280 dp; control glyphs: `icon_control` 32 dp.
 
 ## Components
 
@@ -52,6 +52,8 @@ System Roboto via font families; sizes are tuned for viewing from a couch.
 | `Widget.AirCast.StepBadge` | `styles.xml` + `drawable/bg_step_badge.xml` | 32 dp circle, `surface_elevated`, `Label` text — numbered instruction steps |
 | `Widget.AirCast.Progress` | `styles.xml` | Horizontal `ProgressBar`, 4 dp, `accent` on `surface_elevated` |
 | `Widget.AirCast.Banner` | `styles.xml` + `drawable/bg_banner.xml` | Top-centered pill over video (`scrim` fill) for "connecting…" messages, auto-hides |
+| `Widget.AirCast.PlaybackBar` | `styles.xml` + `drawable/bg_banner.xml` | Bottom bar over AirPlay video inside the safe area: play/pause glyph, `Title` text, remote hint and times in `Caption` + `text_secondary` (legible on `scrim`), `Widget.AirCast.Progress`. Shown on every remote key or playback change; hides after 4 s while playing, stays while paused or loading |
+| Control glyphs | `drawable/ic_play.xml`, `drawable/ic_pause.xml` | 24-unit vectors at `icon_control`, `text_primary` fill; show the action OK performs (pause while playing, play while paused) |
 | Artwork | `ImageView` + `drawable/bg_artwork.xml` | `radius_artwork` with `clipToOutline`; placeholder = brand icon on `surface_elevated` |
 | `AspectRatioFrameLayout` | `shared/ui/AspectRatioFrameLayout.kt` | Fits the mirrored `SurfaceView` to the stream's aspect ratio, centered, letterboxed with `bg` |
 | Brand icon | `drawable/ic_aircast.xml` | Generic screen-with-signal glyph tinted `accent` (not Apple's AirPlay logo) |
@@ -60,10 +62,10 @@ System Roboto via font families; sizes are tuned for viewing from a couch.
 ## Themes (`values/themes.xml`)
 
 - `Theme.AirCast` — `android:Theme.DeviceDefault.NoActionBar.Fullscreen`, `windowBackground = bg`, no window animations on the video screen.
-- `Theme.AirCast.Invisible` — fully transparent, no preview/animation/dim; only for `BootActivity`, which never draws UI.
 
 ## Rules
 
 - Never hard-code colors, text sizes or paddings in layouts; add a token here first.
 - All text must be legible from 3 m: nothing below 16sp.
 - Focusable elements (if any are added) must show an `accent` focus state — the remote has no pointer.
+- Screens without focusable views take remote keys in the activity (`onKeyDown`) and must show what they do (e.g. the playback bar's hint).

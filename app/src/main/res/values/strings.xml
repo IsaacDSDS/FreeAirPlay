@@ -27,6 +27,9 @@
     <string name="audio_source">AirPlay · %1$s</string>
     <string name="track_unknown">Unknown title</string>
 
+    <string name="playback_loading">Loading…</string>
+    <string name="playback_hint">OK pause  ·  ← → 10 s  ·  Back stop</string>
+
     <string name="notification_channel">AirPlay receiver</string>
     <string name="notification_text">Waiting for AirPlay devices</string>
 </resources>

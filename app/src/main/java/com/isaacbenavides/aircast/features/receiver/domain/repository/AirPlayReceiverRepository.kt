@@ -20,4 +20,14 @@ interface AirPlayReceiverRepository {
 
     /** Where mirrored video is drawn; null while nothing is on screen (decoding continues off-screen). */
     fun attachRenderSurface(surface: RenderSurface?)
+
+    // AirPlay video controls from the TV remote; ignored unless an AirPlay video is playing.
+    // The client follows along on its next status poll.
+
+    fun setStreamPaused(paused: Boolean)
+
+    fun seekStreamBy(deltaMs: Long)
+
+    /** Closes the AirPlay video right away and ends the client's session, like Menu on an Apple TV. Blocking. */
+    fun stopStream()
 }
