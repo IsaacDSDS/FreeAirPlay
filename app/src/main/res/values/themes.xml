@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.AirCast" parent="android:Theme.DeviceDefault.NoActionBar.Fullscreen">
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:colorBackground">@color/bg</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+
+    <!-- Fully transparent, used by BootActivity (never shows UI). -->
+    <style name="Theme.AirCast.Invisible" parent="android:Theme.Translucent.NoTitleBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:windowDisablePreview">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
+</resources>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generic "screen receiving a signal" glyph (intentionally not Apple's AirPlay logo). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="@color/accent"
+        android:strokeWidth="3"
+        android:strokeLineJoin="round"
+        android:pathData="M9,8h30a4,4 0,0 1,4 4v18a4,4 0,0 1,-4 4H33M15,34H9a4,4 0,0 1,-4 -4V12a4,4 0,0 1,4 -4" />
+    <path
+        android:fillColor="@color/accent"
+        android:pathData="M24,28l9,12H15z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="@color/accent"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M18,21.5a8,8 0,0 1,12 0M14.5,17.5a13,13 0,0 1,19 0" />
+</vector>

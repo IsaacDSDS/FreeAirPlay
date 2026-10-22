@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">AirCast TV</string>
+    <string name="subtitle">AirPlay receiver</string>
+
+    <string name="status_starting">Starting receiver…</string>
+    <string name="status_ready">Ready for AirPlay</string>
+    <string name="status_connected">Connected to %1$s</string>
+    <string name="status_mirroring">Mirroring %1$s</string>
+    <string name="status_streaming">Playing video from %1$s</string>
+    <string name="status_audio">Playing from %1$s</string>
+    <string name="status_error_discovery">Can\'t announce the receiver on the network</string>
+    <string name="status_error_server">Can\'t start the AirPlay server</string>
+    <string name="status_error_unknown">The receiver stopped unexpectedly</string>
+
+    <string name="how_to_title">How to connect</string>
+    <string name="step_network">Connect your iPhone, iPad or Mac to the same network as this TV.</string>
+    <string name="step_ios">iPhone or iPad: open Control Center and tap Screen Mirroring, or tap AirPlay on a video.</string>
+    <string name="step_mac">Mac: open Control Center and click Screen Mirroring, or use the AirPlay menu.</string>
+    <string name="step_choose">Choose “%1$s”.</string>
+
+    <string name="network_info">%1$s · port %2$d</string>
+    <string name="network_none">No network connection</string>
+
+    <string name="banner_connecting">%1$s is connecting…</string>
+    <string name="client_unknown">A device</string>
+    <string name="audio_source">AirPlay · %1$s</string>
+    <string name="track_unknown">Unknown title</string>
+
+    <string name="notification_channel">AirPlay receiver</string>
+    <string name="notification_text">Waiting for AirPlay devices</string>
+</resources>

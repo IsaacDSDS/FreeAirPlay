@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle">Receptor AirPlay</string>
+
+    <string name="status_starting">Iniciando receptor…</string>
+    <string name="status_ready">Listo para AirPlay</string>
+    <string name="status_connected">Conectado a %1$s</string>
+    <string name="status_mirroring">Duplicando %1$s</string>
+    <string name="status_streaming">Reproduciendo vídeo de %1$s</string>
+    <string name="status_audio">Reproduciendo desde %1$s</string>
+    <string name="status_error_discovery">No se puede anunciar el receptor en la red</string>
+    <string name="status_error_server">No se puede iniciar el servidor AirPlay</string>
+    <string name="status_error_unknown">El receptor se detuvo inesperadamente</string>
+
+    <string name="how_to_title">Cómo conectar</string>
+    <string name="step_network">Conecta tu iPhone, iPad o Mac a la misma red que esta TV.</string>
+    <string name="step_ios">iPhone o iPad: abre el Centro de control y toca «Duplicar pantalla», o toca AirPlay en un vídeo.</string>
+    <string name="step_mac">Mac: abre el Centro de control y haz clic en «Duplicar pantalla», o usa el menú AirPlay.</string>
+    <string name="step_choose">Elige «%1$s».</string>
+
+    <string name="network_info">%1$s · puerto %2$d</string>
+    <string name="network_none">Sin conexión de red</string>
+
+    <string name="banner_connecting">%1$s se está conectando…</string>
+    <string name="client_unknown">Un dispositivo</string>
+    <string name="audio_source">AirPlay · %1$s</string>
+    <string name="track_unknown">Sin título</string>
+
+    <string name="notification_channel">Receptor AirPlay</string>
+    <string name="notification_text">Esperando dispositivos AirPlay</string>
+</resources>
