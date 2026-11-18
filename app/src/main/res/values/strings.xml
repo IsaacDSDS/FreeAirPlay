@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">AirCast TV</string>
-    <string name="subtitle">AirPlay receiver</string>
+    <string name="app_name" translatable="false">Pantavi</string>
+    <string name="subtitle">Compatible with AirPlay</string>
 
     <string name="status_starting">Starting receiver…</string>
     <string name="status_ready">Ready for AirPlay</string>
@@ -23,13 +23,26 @@
     <string name="network_none">No network connection</string>
 
     <string name="banner_connecting">%1$s is connecting…</string>
-    <string name="client_unknown">A device</string>
+    <string name="client_unknown">a device</string>
+    <string name="client_unknown_start">A device</string>
     <string name="audio_source">AirPlay · %1$s</string>
     <string name="track_unknown">Unknown title</string>
 
-    <string name="playback_loading">Loading…</string>
+    <string name="stream_loading">Loading video from %1$s…</string>
     <string name="playback_hint">OK pause  ·  ← → 10 s  ·  Back stop</string>
 
-    <string name="notification_channel">AirPlay receiver</string>
+    <string name="overlay_permission_button">Allow Pantavi to open by itself</string>
+
+    <string name="licenses_button">Licenses &amp; source code</string>
+    <string name="licenses_version">Version %1$s</string>
+    <string name="licenses_copyright">Pantavi © 2026 Isaac Benavides. It includes software from the authors listed below.</string>
+    <string name="licenses_notice">Pantavi is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License, version 3. It is distributed WITHOUT ANY WARRANTY, without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. The full license text is below.</string>
+    <string name="licenses_source">Source code of this version: %1$s</string>
+    <string name="licenses_trademark">AirPlay is a trademark of Apple Inc. Pantavi is not affiliated with, sponsored or endorsed by Apple. The Pantavi name and logo are not covered by the GPL.</string>
+    <string name="licenses_components">Third-party components</string>
+    <string name="licenses_texts">License texts</string>
+    <string name="licenses_hint">↑ ↓ scroll  ·  ← → page  ·  Back return</string>
+
+    <string name="notification_channel">Receiver</string>
     <string name="notification_text">Waiting for AirPlay devices</string>
 </resources>

@@ -3,8 +3,10 @@ package com.isaacbenavides.aircast.features.receiver.presentation
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
+import android.provider.Settings
 import android.view.KeyEvent
 import android.view.SurfaceHolder
 import android.view.View
@@ -19,6 +21,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.isaacbenavides.aircast.R
+import com.isaacbenavides.aircast.core.di.ServiceLocator
 import com.isaacbenavides.aircast.databinding.ActivityReceiverBinding
 import com.isaacbenavides.aircast.features.receiver.domain.model.NowPlaying
 import com.isaacbenavides.aircast.features.receiver.domain.model.ReceiverError
@@ -43,11 +46,22 @@ class ReceiverActivity : ComponentActivity() {
     private var bannerJob: Job? = null
     private var progressJob: Job? = null
     private var playbackBarJob: Job? = null
+    private var loaderJob: Job? = null
     private var shownPlayback: StreamPlayback? = null
+    /** Back on the audio player shows the home screen; the sound keeps playing. */
+    private var audioPanelDismissed = false
 
     /** Back closes an AirPlay video, like Menu on an Apple TV; otherwise the default applies. */
     private val stopStreamOnBack = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() = viewModel.stopStream()
+    }
+
+    private val hideAudioPanelOnBack = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            audioPanelDismissed = true
+            render(viewModel.state.value)
+            binding.licensesButton.requestFocus()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,12 +70,16 @@ class ReceiverActivity : ComponentActivity() {
         setContentView(binding.root)
         autoLaunched = intent.getBooleanExtra(EXTRA_AUTO_LAUNCHED, false)
         onBackPressedDispatcher.addCallback(this, stopStreamOnBack)
+        onBackPressedDispatcher.addCallback(this, hideAudioPanelOnBack)
 
         binding.videoSurface.holder.addCallback(object : SurfaceHolder.Callback {
             override fun surfaceCreated(holder: SurfaceHolder) = viewModel.onSurfaceAvailable(holder.surface)
             override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) = Unit
             override fun surfaceDestroyed(holder: SurfaceHolder) = viewModel.onSurfaceDestroyed()
         })
+
+        binding.licensesButton.setOnClickListener { ServiceLocator.navigator.openLicenses(this) }
+        binding.overlayPermissionButton.setOnClickListener { openOverlaySettings() }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -74,6 +92,8 @@ class ReceiverActivity : ComponentActivity() {
         super.onResume()
         // Started while visible so TCL's boot manager lets the service go foreground.
         ReceiverService.start(this)
+        // Back from the overlay settings screen.
+        binding.overlayPermissionButton.isVisible = !Settings.canDrawOverlays(this)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -113,17 +133,22 @@ class ReceiverActivity : ComponentActivity() {
         val showingVideo = videoPhase && state.videoSize != null
         val playingAudio = state.phase == ReceiverPhase.PLAYING_AUDIO
         val streaming = state.phase == ReceiverPhase.STREAMING
+        // Shown again for the next audio session.
+        if (!playingAudio) audioPanelDismissed = false
+        val showAudioPanel = playingAudio && !showingVideo && !audioPanelDismissed
 
         binding.videoContainer.aspectRatio = state.videoSize?.aspectRatio ?: 0f
-        binding.idlePanel.isVisible = !showingVideo && !playingAudio
-        binding.audioPanel.isVisible = playingAudio && !showingVideo
+        binding.idlePanel.isVisible = !showingVideo && !showAudioPanel
+        binding.audioPanel.isVisible = showAudioPanel
 
         renderIdle(state)
         if (playingAudio) renderNowPlaying(state)
         renderPlayback(state)
+        renderLoader(state)
         if (playingAudio || streaming) startProgressTicker() else stopProgressTicker()
         renderBanner(state)
         stopStreamOnBack.isEnabled = streaming
+        hideAudioPanelOnBack.isEnabled = showAudioPanel
 
         val keepAwake = videoPhase || playingAudio
         if (keepAwake) {
@@ -142,7 +167,7 @@ class ReceiverActivity : ComponentActivity() {
 
     private fun renderIdle(state: ReceiverState) {
         val name = state.receiverName.ifBlank { getString(R.string.app_name) }
-        val client = state.client?.name ?: getString(R.string.client_unknown)
+        val client = clientName(state)
         binding.receiverName.text = name
         binding.stepChoose.text = getString(R.string.step_choose, name)
         binding.networkInfo.text = when {
@@ -165,7 +190,7 @@ class ReceiverActivity : ComponentActivity() {
 
     private fun renderNowPlaying(state: ReceiverState) {
         val nowPlaying = state.nowPlaying ?: NowPlaying()
-        binding.audioSource.text = getString(R.string.audio_source, state.client?.name ?: getString(R.string.client_unknown))
+        binding.audioSource.text = getString(R.string.audio_source, clientName(state, sentenceStart = true))
         binding.trackTitle.text = nowPlaying.title ?: getString(R.string.track_unknown)
         binding.trackArtist.text = nowPlaying.artist.orEmpty()
         binding.trackAlbum.text = nowPlaying.album.orEmpty()
@@ -176,7 +201,7 @@ class ReceiverActivity : ComponentActivity() {
                 binding.artwork.setImageBitmap(bitmap)
                 binding.artwork.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
             } else {
-                binding.artwork.setImageResource(R.drawable.ic_aircast)
+                binding.artwork.setImageResource(R.drawable.ic_brand)
                 binding.artwork.scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
             }
             binding.artwork.clipToOutline = true
@@ -184,7 +209,8 @@ class ReceiverActivity : ComponentActivity() {
     }
 
     private fun renderPlayback(state: ReceiverState) {
-        val playback = state.playback.takeIf { state.phase == ReceiverPhase.STREAMING }
+        // Before the first frame the loader says what is going on.
+        val playback = state.playback.takeIf { state.phase == ReceiverPhase.STREAMING && state.videoSize != null }
         if (playback == null) {
             playbackBarJob?.cancel()
             binding.playbackBar.isVisible = false
@@ -192,17 +218,37 @@ class ReceiverActivity : ComponentActivity() {
             return
         }
         binding.playbackIcon.setImageResource(if (playback.paused) R.drawable.ic_play else R.drawable.ic_pause)
-        binding.playbackTitle.text = if (playback.buffering) {
-            getString(R.string.playback_loading)
-        } else {
-            getString(R.string.status_streaming, state.client?.name ?: getString(R.string.client_unknown))
-        }
+        binding.playbackTitle.text = getString(R.string.status_streaming, clientName(state))
         // Every report is a start, pause, seek or buffering change: worth showing the controls.
         if (playback != shownPlayback) {
             shownPlayback = playback
             showPlaybackBar()
         }
         updatePlaybackProgress(playback)
+    }
+
+    /**
+     * Full-screen loader while an AirPlay video loads: at once before the first frame, and after a
+     * moment when it rebuffers, so quick seeks don't flash it.
+     */
+    private fun renderLoader(state: ReceiverState) {
+        val playback = state.playback.takeIf { state.phase == ReceiverPhase.STREAMING }
+        if (playback?.buffering != true) {
+            loaderJob?.cancel()
+            loaderJob = null
+            binding.streamLoader.isVisible = false
+            return
+        }
+        binding.streamLoaderText.text = getString(R.string.stream_loading, clientName(state))
+        if (binding.streamLoader.isVisible || loaderJob?.isActive == true) return
+        if (state.videoSize == null) {
+            binding.streamLoader.isVisible = true
+        } else {
+            loaderJob = lifecycleScope.launch {
+                delay(REBUFFER_LOADER_DELAY_MS)
+                binding.streamLoader.isVisible = true
+            }
+        }
     }
 
     /** Shows the controls; they hide on their own only while the video is actually playing. */
@@ -263,7 +309,7 @@ class ReceiverActivity : ComponentActivity() {
     private fun renderBanner(state: ReceiverState) {
         val client = state.client
         if (client != null && client.deviceId != previousClientId) {
-            binding.connectionBanner.text = getString(R.string.banner_connecting, client.name)
+            binding.connectionBanner.text = getString(R.string.banner_connecting, clientName(state, sentenceStart = true))
             binding.connectionBanner.visibility = View.VISIBLE
             bannerJob?.cancel()
             bannerJob = lifecycleScope.launch {
@@ -273,6 +319,17 @@ class ReceiverActivity : ComponentActivity() {
         }
         previousClientId = client?.deviceId
     }
+
+    private fun openOverlaySettings() {
+        val forThisApp = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+        runCatching { startActivity(forThisApp) }
+            .recoverCatching { startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)) }
+    }
+
+    /** The name the device gave itself (e.g. "Isaac's iPhone"), or a generic one if it sent none. */
+    private fun clientName(state: ReceiverState, sentenceStart: Boolean = false): String =
+        state.client?.name?.takeIf { it.isNotBlank() }
+            ?: getString(if (sentenceStart) R.string.client_unknown_start else R.string.client_unknown)
 
     private fun errorText(error: ReceiverError?): String = getString(
         when (error) {
@@ -301,5 +358,6 @@ class ReceiverActivity : ComponentActivity() {
         private const val PLAYBACK_BAR_TIMEOUT_MS = 4_000L
         private const val SEEK_STEP_MS = 10_000L
         private const val SEEK_LONG_STEP_MS = 30_000L
+        private const val REBUFFER_LOADER_DELAY_MS = 500L
     }
 }

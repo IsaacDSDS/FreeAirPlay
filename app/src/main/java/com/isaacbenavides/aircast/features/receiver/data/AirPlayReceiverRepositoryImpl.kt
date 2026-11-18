@@ -16,6 +16,7 @@ import com.isaacbenavides.aircast.features.receiver.data.nativebridge.AirPlayNat
 import com.isaacbenavides.aircast.features.receiver.data.nativebridge.NativeCallbacks
 import com.isaacbenavides.aircast.features.receiver.domain.model.ConnectedClient
 import com.isaacbenavides.aircast.features.receiver.domain.model.NowPlaying
+import com.isaacbenavides.aircast.features.receiver.domain.model.ReceiverCapabilities
 import com.isaacbenavides.aircast.features.receiver.domain.model.ReceiverError
 import com.isaacbenavides.aircast.features.receiver.domain.model.ReceiverPhase
 import com.isaacbenavides.aircast.features.receiver.domain.model.ReceiverState
@@ -67,7 +68,7 @@ class AirPlayReceiverRepositoryImpl(
         override fun onVideoSizeChanged(width: Int, height: Int) =
             updateState { it.copy(videoSize = VideoSize(width, height)) }
 
-        override fun onPlaybackChanged(positionMs: Long, durationMs: Long, paused: Boolean, buffering: Boolean) =
+        override fun onPlaybackChanged(positionMs: Long, durationMs: Long, paused: Boolean, buffering: Boolean) {
             updateState {
                 it.copy(
                     playback = StreamPlayback(
@@ -79,11 +80,13 @@ class AirPlayReceiverRepositoryImpl(
                     ),
                 )
             }
+        }
     })
 
     override fun start(): Unit = synchronized(lifecycleLock) {
         if (running) return
         val name = identity.receiverName()
+        val capabilities = ReceiverCapabilities.DEFAULT
         synchronized(stateLock) {
             session = Session()
             _state.value = ReceiverState(
@@ -94,24 +97,25 @@ class AirPlayReceiverRepositoryImpl(
         }
         video.start()
         audio.start()
+        stream.setMaxVideoSize(capabilities.maxWidth, capabilities.maxHeight)
         val port = AirPlayNative.nativeStart(
             callbacks = this,
             name = name,
             hostLabel = identity.hostLabel(),
             macAddress = identity.macAddress(),
             keyFile = identity.keyFilePath(),
-            width = DISPLAY_WIDTH,
-            height = DISPLAY_HEIGHT,
+            width = capabilities.maxWidth,
+            height = capabilities.maxHeight,
             refreshRate = REFRESH_RATE,
-            maxFps = MAX_FPS,
-            h265Support = H265_SUPPORT,
-            hlsSupport = HLS_SUPPORT,
+            maxFps = capabilities.maxFps,
+            h265Support = capabilities.h265,
+            hlsSupport = capabilities.airPlayVideo,
             languages = preferredLanguages(),
             debugLog = BuildConfig.DEBUG,
         )
         if (port > 0) {
             running = true
-            Log.i(TAG, "receiver \"$name\" listening on port $port")
+            Log.i(TAG, "receiver \"$name\" listening on port $port ($capabilities)")
             updateState { it.copy(port = port, error = null) }
         } else {
             Log.e(TAG, "native start failed: $port")
@@ -295,9 +299,11 @@ class AirPlayReceiverRepositoryImpl(
 
     // ---------------------------------------------------------------- state helpers
 
-    private fun updateSession(transform: (Session) -> Session) = synchronized(stateLock) {
-        session = transform(session)
-        _state.value = withDerivedFields(_state.value)
+    private fun updateSession(transform: (Session) -> Session) {
+        synchronized(stateLock) {
+            session = transform(session)
+            _state.value = withDerivedFields(_state.value)
+        }
     }
 
     private fun updateState(transform: (ReceiverState) -> ReceiverState) = synchronized(stateLock) {
@@ -336,18 +342,8 @@ class AirPlayReceiverRepositoryImpl(
 
     private companion object {
         const val TAG = "AirCastReceiver"
-        /**
-         * Apple clients only switch to H.265 when the receiver asks for more than 1080 lines, so
-         * the TV is advertised as 4K (as UxPlay does with -h265). H.264 streams stay at 1080p,
-         * which is also the limit of the TV's hardware H.264 decoder.
-         */
-        const val H265_SUPPORT = true
-        /** AirPlay video (the AirPlay button inside video apps and Safari), uxplay -hls. */
-        const val HLS_SUPPORT = true
-        const val DISPLAY_WIDTH = 3840
-        const val DISPLAY_HEIGHT = 2160
+        /** Display refresh rate announced to clients; the frame rate cap comes from [ReceiverCapabilities]. */
         const val REFRESH_RATE = 60
-        const val MAX_FPS = 60
         const val RTP_CLOCK_RATE = 44_100L
         const val RTP_MASK = 0xFFFFFFFFL
 

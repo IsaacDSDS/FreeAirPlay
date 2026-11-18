@@ -67,6 +67,7 @@ internal class StreamPlayer(private val context: Context, private val listener: 
     private var player: ExoPlayer? = null
     private var surface: Surface? = null
     private var volume = 1f
+    private var maxVideoSide = Int.MAX_VALUE
     private var url: String? = null
     private var startPositionMs = 0L
     private var forcedHls = false
@@ -185,6 +186,12 @@ internal class StreamPlayer(private val context: Context, private val listener: 
         return position.toFloat()
     }
 
+    /** Caps the variant picked from adaptive streams (HLS); a single larger stream still plays. */
+    fun setMaxVideoSize(width: Int, height: Int) {
+        // The long side only, so portrait videos get the same quality as landscape ones.
+        handler.post { maxVideoSide = maxOf(width, height) }
+    }
+
     fun setVolume(gain: Float) {
         handler.post {
             volume = gain
@@ -232,6 +239,9 @@ internal class StreamPlayer(private val context: Context, private val listener: 
                     .build(),
                 false,
             )
+            .build()
+        exo.trackSelectionParameters = exo.trackSelectionParameters.buildUpon()
+            .setMaxVideoSize(maxVideoSide, maxVideoSide)
             .build()
         exo.addListener(playerListener)
         exo.addAnalyticsListener(decoderLogger)

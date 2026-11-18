@@ -1,6 +1,7 @@
 package com.isaacbenavides.aircast.core.di
 
 import android.app.Application
+import com.isaacbenavides.aircast.core.navigation.AppNavigator
 import com.isaacbenavides.aircast.core.network.NetworkAddressProvider
 import com.isaacbenavides.aircast.features.receiver.data.AirPlayReceiverRepositoryImpl
 import com.isaacbenavides.aircast.features.receiver.data.identity.ReceiverIdentityStore
@@ -17,7 +18,13 @@ object ServiceLocator {
 
     val networkAddressProvider: NetworkAddressProvider by lazy { NetworkAddressProvider() }
 
+    val navigator: AppNavigator by lazy { ActivityNavigator() }
+
     val receiverRepository: AirPlayReceiverRepository by lazy {
-        AirPlayReceiverRepositoryImpl(application, ReceiverIdentityStore(application), networkAddressProvider)
+        AirPlayReceiverRepositoryImpl(
+            application,
+            ReceiverIdentityStore(application),
+            networkAddressProvider,
+        )
     }
 }

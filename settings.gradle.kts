@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "AirCastTV"
+rootProject.name = "Pantavi"
 include(":app")

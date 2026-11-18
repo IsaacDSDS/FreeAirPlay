@@ -1,4 +1,4 @@
-# AirCast TV — Styles
+# Pantavi — Styles
 
 Single source of truth for the receiver UI (Android TV, 10-foot experience, 1920×1080 @ 320 dpi → 960×540 dp).
 Everything below is defined in `app/src/main/res/values/` — reuse these resources instead of hard-coding values.
@@ -41,23 +41,32 @@ System Roboto via font families; sizes are tuned for viewing from a couch.
 - 4 dp grid: `space_xs` 4, `space_s` 8, `space_m` 16, `space_l` 24, `space_xl` 32, `space_xxl` 48.
 - TV overscan safe area: `safe_horizontal` 48 dp, `safe_vertical` 27 dp — apply to every full-screen layout root.
 - Radii: `radius_card` 20 dp, `radius_artwork` 16 dp, `radius_pill` 24 dp.
-- Brand icon: `icon_hero` 96 dp; artwork: `artwork_size` 280 dp; control glyphs: `icon_control` 32 dp.
+- Brand icon: `icon_hero` 96 dp; artwork: `artwork_size` 280 dp; control glyphs: `icon_control` 32 dp; loader spinner: `loader_size` 64 dp.
 
 ## Components
 
 | Component | Where | Notes |
 |---|---|---|
+| `Widget.AirCast.TextButton` | `styles.xml` + `drawable/bg_button.xml` + `color/button_text.xml` | Focusable, clickable `TextView` pill (`radius_pill`), `Label` text. Default: transparent with 1 dp `outline`, `text_secondary`. Focused: `accent_soft` fill, 2 dp `accent` stroke, `text_primary`. The only button style; rows of buttons are spaced `space_m` |
 | `Widget.AirCast.Card` | `styles.xml` + `drawable/bg_card.xml` | `surface` fill, 1 dp `outline`, `radius_card`, `space_xl` padding |
 | `Widget.AirCast.StatusPill` | `styles.xml` + `drawable/bg_pill.xml` | `accent_soft` fill, `Label` text; leading dot via `drawable/dot_status.xml` tinted with `success` / `warning` / `error` / `accent` |
 | `Widget.AirCast.StepBadge` | `styles.xml` + `drawable/bg_step_badge.xml` | 32 dp circle, `surface_elevated`, `Label` text — numbered instruction steps |
 | `Widget.AirCast.Progress` | `styles.xml` | Horizontal `ProgressBar`, 4 dp, `accent` on `surface_elevated` |
 | `Widget.AirCast.Banner` | `styles.xml` + `drawable/bg_banner.xml` | Top-centered pill over video (`scrim` fill) for "connecting…" messages, auto-hides |
-| `Widget.AirCast.PlaybackBar` | `styles.xml` + `drawable/bg_banner.xml` | Bottom bar over AirPlay video inside the safe area: play/pause glyph, `Title` text, remote hint and times in `Caption` + `text_secondary` (legible on `scrim`), `Widget.AirCast.Progress`. Shown on every remote key or playback change; hides after 4 s while playing, stays while paused or loading |
+| Stream loader | `layout/activity_receiver.xml` (`stream_loader`) | Full-screen opaque `bg` panel with a centered indeterminate `ProgressBar` (`loader_size`, `accent`) and a `Title` line ("Loading video from …"). Shown while an AirPlay video loads: at once before the first frame, after 500 ms when it rebuffers. Sits over the video and the home screen, under the playback bar and banners |
+| `Widget.AirCast.PlaybackBar` | `styles.xml` + `drawable/bg_banner.xml` | Bottom bar over AirPlay video inside the safe area: play/pause glyph, `Title` text, remote hint and times in `Caption` + `text_secondary` (legible on `scrim`), `Widget.AirCast.Progress`. Hidden until the first frame (the stream loader covers loading). Shown on every remote key or playback change; hides after 4 s while playing, stays while paused or loading |
 | Control glyphs | `drawable/ic_play.xml`, `drawable/ic_pause.xml` | 24-unit vectors at `icon_control`, `text_primary` fill; show the action OK performs (pause while playing, play while paused) |
 | Artwork | `ImageView` + `drawable/bg_artwork.xml` | `radius_artwork` with `clipToOutline`; placeholder = brand icon on `surface_elevated` |
 | `AspectRatioFrameLayout` | `shared/ui/AspectRatioFrameLayout.kt` | Fits the mirrored `SurfaceView` to the stream's aspect ratio, centered, letterboxed with `bg` |
-| Brand icon | `drawable/ic_aircast.xml` | Generic screen-with-signal glyph tinted `accent` (not Apple's AirPlay logo) |
+| Brand icon | `drawable/ic_brand.xml` | Phone sending its picture to a TV, tinted `accent`. Must never resemble Apple's AirPlay logo (screen with a triangle) |
 | Launcher banner | `drawable-xhdpi/banner.png` (rendered by `scripts/render_banner.swift`) | 320×180 dp Leanback banner, brand icon + name on `bg` |
+
+## Screens
+
+| Screen | Layout | Notes |
+|---|---|---|
+| Receiver (home) | `layout/activity_receiver.xml` | Left column: brand icon, name, status pill, IP/port in `Caption`, the licenses `TextButton` and the overlay-permission `TextButton` when needed. Right column: instructions `Card`. During AirPlay audio the now-playing panel replaces it; Back returns here while the sound keeps playing |
+| Licenses | `layout/activity_licenses.xml` | Focusable `ScrollView` (no focus highlight) that the remote scrolls; one `TextView` per block; license texts in `Caption`. The key hint (`Banner`) sits below the scroll area, never over the text |
 
 ## Themes (`values/themes.xml`)
 
@@ -67,5 +76,5 @@ System Roboto via font families; sizes are tuned for viewing from a couch.
 
 - Never hard-code colors, text sizes or paddings in layouts; add a token here first.
 - All text must be legible from 3 m: nothing below 16sp.
-- Focusable elements (if any are added) must show an `accent` focus state — the remote has no pointer.
+- Focusable elements must show an `accent` focus state (use `Widget.AirCast.TextButton`) — the remote has no pointer.
 - Screens without focusable views take remote keys in the activity (`onKeyDown`) and must show what they do (e.g. the playback bar's hint).

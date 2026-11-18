@@ -68,6 +68,20 @@
         <item name="android:progressBackgroundTint">@color/surface_elevated</item>
     </style>
 
+    <!-- A TextView, not a Button: no platform caps, minimum sizes or ripple. -->
+    <style name="Widget.AirCast.TextButton" parent="">
+        <item name="android:background">@drawable/bg_button</item>
+        <item name="android:textAppearance">@style/TextAppearance.AirCast.Label</item>
+        <item name="android:textColor">@color/button_text</item>
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingStart">@dimen/space_l</item>
+        <item name="android:paddingEnd">@dimen/space_l</item>
+        <item name="android:paddingTop">@dimen/space_s</item>
+        <item name="android:paddingBottom">@dimen/space_s</item>
+    </style>
+
     <style name="Widget.AirCast.PlaybackBar" parent="">
         <item name="android:background">@drawable/bg_banner</item>
         <item name="android:orientation">vertical</item>

@@ -1,9 +1,12 @@
-# FreeAirPlay
+# Pantavi
 
-**AirCast TV**, an AirPlay receiver for Android TV: mirror an iPhone, iPad or Mac screen (with
+**Pantavi**, a receiver for Android TV compatible with AirPlay: mirror an iPhone, iPad or Mac screen (with
 sound), send videos with the AirPlay button in Safari and video apps, and stream AirPlay audio to
 the TV, the way an Apple TV does. Built and tested on a TCL Android TV
 (Android 11, Realtek RTD2851A, `armeabi-v7a`).
+
+Everything is available from the moment the app is installed: a single APK, no accounts, no
+extra apps and no time limits.
 
 ## How it works
 
@@ -33,13 +36,24 @@ Kotlin code follows feature-first Clean Architecture:
 
 ```
 core/                       DI (ServiceLocator), network address, Surface adapter
-features/receiver/domain/   ReceiverState, NowPlaying, AirPlayReceiverRepository (pure Kotlin)
+core/navigation/            AppNavigator (opens other features' screens; implemented in core/di)
+features/receiver/domain/   ReceiverState, ReceiverCapabilities, NowPlaying, AirPlayReceiverRepository (pure Kotlin)
 features/receiver/data/     JNI bridge, VideoDecoder, AudioPlayer, StreamPlayer, DMAP parser, identity store
 features/receiver/presentation/  ReceiverActivity, ReceiverService
+features/about/presentation/  LicensesActivity (legal notices, source link, license texts)
 shared/ui/                  AspectRatioFrameLayout
 ```
 
 UI tokens and components are documented in [STYLES.md](STYLES.md).
+
+### What it supports
+
+| | |
+|---|---|
+| Screen mirroring | up to 3840×2160 at 60 fps, H.265 or H.264 |
+| AirPlay video (the AirPlay button in apps) | up to 4K |
+| AirPlay audio | yes |
+| Session length | no limit |
 
 ### Video modes
 
@@ -88,6 +102,9 @@ scripts/build_openssl.sh <work-dir> "$PWD/app/src/main/cpp/third_party/openssl" 
 ./gradlew assembleRelease     # signed with the local debug key, for sideloading
 ```
 
+Native libraries are linked with `ANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES` (16 KB page alignment on
+`arm64-v8a`), which newer 64-bit devices need.
+
 ## Install on the TV
 
 Enable *Developer options → USB/Network debugging* on the TV, then:
@@ -96,10 +113,13 @@ Enable *Developer options → USB/Network debugging* on the TV, then:
 adb connect <tv-ip>:5555
 adb install -r app/build/outputs/apk/release/app-release.apk
 # let the receiver bring the mirroring screen to the front from the background
-adb shell appops set com.isaacbenavides.aircast SYSTEM_ALERT_WINDOW allow
+adb shell appops set com.isaacbenavides.pantavi SYSTEM_ALERT_WINDOW allow
 ```
 
-The receiver starts when **AirCast TV** is opened from the launcher; nothing starts it on boot or
+Without adb, the home screen shows a button that opens the TV's *Display over other apps* setting
+until the permission is granted; until then, keep Pantavi open while mirroring.
+
+The receiver starts when **Pantavi** is opened from the launcher; nothing starts it on boot or
 after an update. Once opened it stays discoverable in the background (until the TV restarts or
 the system stops the app) and comes to the front by itself (waking the screensaver) when a
 device starts mirroring or sends a video.
@@ -113,7 +133,7 @@ cloud-delivered whitelist. The app therefore:
 - starts its service from `ReceiverActivity` and promotes it to foreground every time the
   activity resumes.
 
-Check with `adb shell dumpsys activity services com.isaacbenavides.aircast | grep isForeground`.
+Check with `adb shell dumpsys activity services com.isaacbenavides.pantavi | grep isForeground`.
 
 ## Limitations
 
@@ -129,6 +149,24 @@ Check with `adb shell dumpsys activity services com.isaacbenavides.aircast | gre
 
 ## License
 
-GPL-3.0, inherited from UxPlay (`app/src/main/cpp/uxplay/LICENSE`). Third-party code: libplist
-(LGPL-2.1), Apple ALAC decoder (Apache-2.0), OpenSSL (Apache-2.0), llhttp (MIT),
-AndroidX Media3 (Apache-2.0).
+Pantavi © 2026 Isaac Benavides, licensed under the GPL-3.0, inherited from UxPlay
+(`app/src/main/cpp/uxplay/LICENSE`). Third-party code:
+
+- UxPlay 1.74 and playfair (GPL-3.0); files from shairplay and the mDNS responder (LGPL-2.1+)
+- libplist (LGPL-2.1+)
+- Apple ALAC decoder (Apache-2.0)
+- OpenSSL 3.5.4 libcrypto (Apache-2.0); its source tarball ships with each published version
+- llhttp, csrp (`uxplay/srp.c`), jsmn and time64 (in libplist) (MIT)
+- AndroidX, Media3 and the Kotlin libraries (Apache-2.0)
+
+The app shows the notices and full license texts under *Licenses and source code*.
+
+### Source code
+
+The complete source is at <https://github.com/IsaacDSDS/FreeAirPlay>.
+
+### Trademarks
+
+AirPlay is a trademark of Apple Inc. Pantavi is not affiliated with, sponsored or endorsed by
+Apple. The GPL does not grant rights to the Pantavi name or logo (GPL-3.0 §7(e)): forks must use
+their own name and icon.

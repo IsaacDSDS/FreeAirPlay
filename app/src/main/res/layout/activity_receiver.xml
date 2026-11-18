@@ -42,7 +42,7 @@
                 android:layout_width="@dimen/icon_hero"
                 android:layout_height="@dimen/icon_hero"
                 android:contentDescription="@null"
-                android:src="@drawable/ic_aircast" />
+                android:src="@drawable/ic_brand" />
 
             <TextView
                 android:id="@+id/receiver_name"
@@ -76,6 +76,30 @@
                 android:layout_marginTop="@dimen/space_l"
                 android:textAppearance="@style/TextAppearance.AirCast.Caption"
                 tools:text="192.168.10.8 · puerto 7000" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_l"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/licenses_button"
+                    style="@style/Widget.AirCast.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/licenses_button" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/overlay_permission_button"
+                style="@style/Widget.AirCast.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_m"
+                android:text="@string/overlay_permission_button"
+                android:visibility="gone"
+                tools:visibility="visible" />
         </LinearLayout>
 
         <LinearLayout
@@ -269,6 +293,34 @@
         </LinearLayout>
     </LinearLayout>
 
+    <!-- AirPlay video loading: opaque, under the controls and banners -->
+    <LinearLayout
+        android:id="@+id/stream_loader"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/bg"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <ProgressBar
+            android:layout_width="@dimen/loader_size"
+            android:layout_height="@dimen/loader_size"
+            android:indeterminate="true"
+            android:indeterminateTint="@color/accent" />
+
+        <TextView
+            android:id="@+id/stream_loader_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_l"
+            android:gravity="center"
+            android:maxWidth="@dimen/card_max_width"
+            android:textAppearance="@style/TextAppearance.AirCast.Title"
+            tools:text="Loading video from Isaac's iPhone…" />
+    </LinearLayout>
+
     <!-- AirPlay video controls for the TV remote -->
     <LinearLayout
         android:id="@+id/playback_bar"
@@ -358,4 +410,5 @@
         android:visibility="gone"
         tools:text="iPhone is connecting…"
         tools:visibility="visible" />
+
 </FrameLayout>

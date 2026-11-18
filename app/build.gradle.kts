@@ -11,18 +11,22 @@ android {
     ndkVersion = "27.1.12297006"
 
     defaultConfig {
-        applicationId = "com.isaacbenavides.aircast"
+        applicationId = "com.isaacbenavides.pantavi"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0.0"
+        versionName = "0.0.1"
+
+        // GPL-3: where users get the source code.
+        buildConfigField("String", "SOURCE_CODE_URL", "\"https://github.com/IsaacDSDS/FreeAirPlay\"")
 
         ndk {
             abiFilters += listOf("armeabi-v7a", "arm64-v8a")
         }
         externalNativeBuild {
             cmake {
-                arguments += listOf("-DANDROID_STL=c++_static")
+                // 16 KB-aligned ELF segments (required by Google Play for 64-bit devices).
+                arguments += listOf("-DANDROID_STL=c++_static", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON")
             }
         }
     }

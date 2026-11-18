@@ -18,6 +18,7 @@
     <dimen name="icon_control">32dp</dimen>
     <dimen name="artwork_size">280dp</dimen>
     <dimen name="step_badge">32dp</dimen>
+    <dimen name="loader_size">64dp</dimen>
     <dimen name="status_dot">10dp</dimen>
     <dimen name="progress_height">4dp</dimen>
     <dimen name="card_max_width">640dp</dimen>

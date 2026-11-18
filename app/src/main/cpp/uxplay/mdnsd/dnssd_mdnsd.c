@@ -59,8 +59,9 @@ static void dnssd_sanitize_label(char *label)
     }
 }
 
-/* AirCastTV: Android's gethostname() returns "localhost", so the JNI glue
- * sets a unique mDNS host label here before dnssd_init(). */
+/* Modified 2026-10-22 by Isaac Benavides for Pantavi: Android's gethostname()
+ * returns "localhost", so the JNI glue sets a unique mDNS host label here before
+ * dnssd_init(). */
 char dnssd_host_label[64] = {0};
 
 static void dnssd_make_host_name(char *dst, size_t dst_len)

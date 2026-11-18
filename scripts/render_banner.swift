@@ -1,7 +1,10 @@
 import AppKit
 
 // Renders the 320x180dp Leanback banner at xhdpi (640x360 px) using the STYLES.md tokens.
+// usage: swift render_banner.swift <out.png> [title] [subtitle]
 let out = CommandLine.arguments[1]
+let titleText = CommandLine.arguments.count > 2 ? CommandLine.arguments[2] : "Pantavi"
+let subtitleText = CommandLine.arguments.count > 3 ? CommandLine.arguments[3] : "Screen mirroring"
 let w = 640.0, h = 360.0
 let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(w), pixelsHigh: Int(h), bitsPerSample: 8,
                            samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,
@@ -21,34 +24,27 @@ bg.setFill(); ctx.fill(CGRect(x: 0, y: 0, width: w, height: h))
 let glow = NSGradient(starting: c(0x0A84FF, 0.35), ending: c(0x0A84FF, 0))!
 glow.draw(fromCenter: NSPoint(x: 150, y: 180), radius: 0, toCenter: NSPoint(x: 150, y: 180), radius: 230, options: [])
 
-// icon (same geometry as ic_aircast.xml, viewport 48 -> scale 3, centered at x=150)
+// icon (same geometry as ic_brand.xml, viewport 48 -> scale 3, centered at x=150)
 ctx.saveGState()
 ctx.translateBy(x: 78, y: 180 + 72)
 ctx.scaleBy(x: 3, y: -3)
 accent.setStroke(); accent.setFill()
-let frame = NSBezierPath()
-frame.move(to: NSPoint(x: 33, y: 34)); frame.line(to: NSPoint(x: 39, y: 34))
-frame.appendArc(withCenter: NSPoint(x: 39, y: 30), radius: 4, startAngle: 90, endAngle: 0, clockwise: true)
-frame.line(to: NSPoint(x: 43, y: 12))
-frame.appendArc(withCenter: NSPoint(x: 39, y: 12), radius: 4, startAngle: 0, endAngle: -90, clockwise: true)
-frame.line(to: NSPoint(x: 9, y: 8))
-frame.appendArc(withCenter: NSPoint(x: 9, y: 12), radius: 4, startAngle: 270, endAngle: 180, clockwise: true)
-frame.line(to: NSPoint(x: 5, y: 30))
-frame.appendArc(withCenter: NSPoint(x: 9, y: 30), radius: 4, startAngle: 180, endAngle: 90, clockwise: true)
-frame.line(to: NSPoint(x: 15, y: 34))
-frame.lineWidth = 3; frame.lineJoinStyle = .round; frame.stroke()
-let tri = NSBezierPath(); tri.move(to: NSPoint(x: 24, y: 28)); tri.line(to: NSPoint(x: 33, y: 40)); tri.line(to: NSPoint(x: 15, y: 40)); tri.close(); tri.fill()
-for (r, lw) in [(8.0, 2.5), (13.0, 2.5)] {
+let tv = NSBezierPath(roundedRect: NSRect(x: 5, y: 8, width: 38, height: 26), xRadius: 4, yRadius: 4)
+tv.lineWidth = 3; tv.stroke()
+let stand = NSBezierPath(); stand.move(to: NSPoint(x: 17, y: 40)); stand.line(to: NSPoint(x: 31, y: 40))
+stand.lineWidth = 3; stand.lineCapStyle = .round; stand.stroke()
+NSBezierPath(roundedRect: NSRect(x: 12, y: 13, width: 8, height: 16), xRadius: 2, yRadius: 2).fill()
+for r in [5.0, 10.0] {
     let arc = NSBezierPath()
-    arc.appendArc(withCenter: NSPoint(x: 24, y: 21.5 + r * 0.75), radius: r, startAngle: 220, endAngle: 320, clockwise: false)
-    arc.lineWidth = lw; arc.lineCapStyle = .round; arc.stroke()
+    arc.appendArc(withCenter: NSPoint(x: 21, y: 21), radius: r, startAngle: -50, endAngle: 50)
+    arc.lineWidth = 2.5; arc.lineCapStyle = .round; arc.stroke()
 }
 ctx.restoreGState()
 
-let title = NSAttributedString(string: "AirCast TV", attributes: [
+let title = NSAttributedString(string: titleText, attributes: [
     .font: NSFont.systemFont(ofSize: 64, weight: .semibold), .foregroundColor: primary])
 title.draw(at: NSPoint(x: 268, y: 178))
-let sub = NSAttributedString(string: "Receptor AirPlay", attributes: [
+let sub = NSAttributedString(string: subtitleText, attributes: [
     .font: NSFont.systemFont(ofSize: 30, weight: .regular), .foregroundColor: secondary])
 sub.draw(at: NSPoint(x: 270, y: 132))
 

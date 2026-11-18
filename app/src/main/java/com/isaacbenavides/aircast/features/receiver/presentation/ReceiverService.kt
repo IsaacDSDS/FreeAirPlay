@@ -119,7 +119,7 @@ class ReceiverService : LifecycleService() {
             NotificationChannel(CHANNEL_ID, getString(R.string.notification_channel), NotificationManager.IMPORTANCE_MIN),
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_aircast)
+            .setSmallIcon(R.drawable.ic_brand)
             .setContentTitle(getString(R.string.app_name))
             .setContentText(getString(R.string.notification_text))
             .setOngoing(true)

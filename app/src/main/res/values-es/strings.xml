@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="subtitle">Receptor AirPlay</string>
+    <string name="subtitle">Compatible con AirPlay</string>
 
     <string name="status_starting">Iniciando receptor…</string>
     <string name="status_ready">Listo para AirPlay</string>
@@ -22,13 +22,26 @@
     <string name="network_none">Sin conexión de red</string>
 
     <string name="banner_connecting">%1$s se está conectando…</string>
-    <string name="client_unknown">Un dispositivo</string>
+    <string name="client_unknown">un dispositivo</string>
+    <string name="client_unknown_start">Un dispositivo</string>
     <string name="audio_source">AirPlay · %1$s</string>
     <string name="track_unknown">Sin título</string>
 
-    <string name="playback_loading">Cargando…</string>
+    <string name="stream_loading">Cargando vídeo de %1$s…</string>
     <string name="playback_hint">OK pausa  ·  ← → 10 s  ·  Atrás detener</string>
 
-    <string name="notification_channel">Receptor AirPlay</string>
+    <string name="overlay_permission_button">Permitir que Pantavi se abra sola</string>
+
+    <string name="licenses_button">Licencias y código fuente</string>
+    <string name="licenses_version">Versión %1$s</string>
+    <string name="licenses_copyright">Pantavi © 2026 Isaac Benavides. Incluye software de los autores indicados más abajo.</string>
+    <string name="licenses_notice">Pantavi es software libre: puedes redistribuirlo y/o modificarlo bajo los términos de la Licencia Pública General de GNU, versión 3. Se distribuye SIN NINGUNA GARANTÍA, ni siquiera la garantía implícita de COMERCIABILIDAD o IDONEIDAD PARA UN PROPÓSITO PARTICULAR. El texto completo de la licencia está más abajo, en inglés, que es la versión oficial.</string>
+    <string name="licenses_source">Código fuente de esta versión: %1$s</string>
+    <string name="licenses_trademark">AirPlay es una marca de Apple Inc. Pantavi no está afiliada, patrocinada ni respaldada por Apple. El nombre y el logo de Pantavi no están incluidos en la licencia GPL.</string>
+    <string name="licenses_components">Componentes de terceros</string>
+    <string name="licenses_texts">Textos de las licencias</string>
+    <string name="licenses_hint">↑ ↓ desplazar  ·  ← → página  ·  Atrás volver</string>
+
+    <string name="notification_channel">Receptor</string>
     <string name="notification_text">Esperando dispositivos AirPlay</string>
 </resources>
